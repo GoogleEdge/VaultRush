@@ -1,0 +1,22 @@
+name: VaultRush
+version: '${version}'
+main: com.example.vaultrush.VaultRushPlugin
+api-version: '1.21.11'
+author: VaultRush Team
+description: Team-based central vault gem collection minigame for Paper and Leaf.
+softdepend: [floodgate]
+commands:
+  vaultrush:
+    description: 宝库争夺游戏和管理命令。
+    usage: /vaultrush <join|jobs|job|leave|list|status|menu|shop|admin>
+    aliases: [vr]
+    permission: vaultrush.play
+permissions:
+  vaultrush.play:
+    description: Join and view Vault Rush games.
+    default: true
+  vaultrush.admin:
+    description: Configure and control Vault Rush arenas.
+    default: op
+    children:
+      vaultrush.play: true

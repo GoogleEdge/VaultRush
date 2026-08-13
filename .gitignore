@@ -1,0 +1,20 @@
+# Gradle and local build output
+.gradle/
+build/
+
+# IDE metadata
+.idea/
+*.iml
+.vscode/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Local secrets and runtime files
+.env
+*.pem
+*.key
+plugins/
+
+# Keep generated wrapper JAR only when needed by Gradle wrapper

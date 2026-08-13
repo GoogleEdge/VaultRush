@@ -1,0 +1,193 @@
+world-protection:
+  # 已启用竞技场的整个世界将作为专用比赛世界受到保护。
+  enabled: true
+  # 达到上限后会拒绝新的方块修改，避免出现无法回滚的改动。
+  max-recorded-blocks: 50000
+  message-cooldown-ticks: 20
+settings:
+  min-players: 2
+  max-players: 8
+  team-size: 4
+  countdown-seconds: 10
+  match-duration-seconds: 600
+  score-to-win: 10
+  gem-spawn-interval-seconds: 8
+  max-vault-gems: 3
+  death-gems: 1
+  drop-carried-gems: true
+  gem-material: EMERALD
+  gem-name: '&a宝石'
+  vault-radius: 3.0
+  deposit-vertical-radius: 4.0
+  respawn-delay-ticks: 20
+  pickup-delay-ticks: 10
+  menu:
+    auto-open-on-join: true
+  kit:
+    sword: STONE_SWORD
+    blocks: 32
+    block-material: WHITE_WOOL
+    food: 8
+jobs:
+  assault:
+    passive:
+      damage-multiplier: 1.10
+    active:
+      horizontal-power: 1.25
+      vertical-power: 0.45
+      cooldown-seconds: 24
+  scout:
+    passive:
+      duration-seconds: 3
+      cooldown-seconds: 10
+    active:
+      radius: 24.0
+      duration-seconds: 5
+      cooldown-seconds: 30
+  guardian:
+    passive:
+      damage-multiplier: 0.85
+    active:
+      duration-seconds: 4
+      cooldown-seconds: 30
+  engineer:
+    extra-blocks: 16
+    active:
+      duration-seconds: 8
+      cooldown-seconds: 25
+  illusionist:
+    passive:
+      duration-seconds: 2
+      cooldown-seconds: 15
+    active:
+      duration-seconds: 5
+      cooldown-seconds: 25
+shop:
+  enabled: true
+  currency:
+    kill-reward: 3
+    deposit-reward-per-gem: 1
+  items:
+    speed:
+      cost: 5
+      duration-seconds: 10
+      amplifier: 1
+      cooldown-seconds: 20
+      purchase-limit: 3
+    jump:
+      cost: 4
+      duration-seconds: 10
+      amplifier: 1
+      cooldown-seconds: 20
+      purchase-limit: 3
+    fireball:
+      cost: 8
+      cooldown-seconds: 12
+      purchase-limit: 3
+      # 近似向上弹射 8 格；实际高度受服务器物理和周围方块影响。
+      horizontal-power: 1.8
+      vertical-power: 1.6
+    shield:
+      cost: 7
+      duration-seconds: 8
+      damage-reduction-percent: 30
+      cooldown-seconds: 25
+      purchase-limit: 2
+    damage-boost:
+      cost: 9
+      duration-seconds: 8
+      bonus-damage: 3.0
+      cooldown-seconds: 25
+      purchase-limit: 2
+    smoke:
+      cost: 6
+      duration-seconds: 8
+      amplifier: 1
+      radius: 8.0
+      cooldown-seconds: 20
+      purchase-limit: 3
+messages:
+  prefix: '&6[宝库争夺]&r '
+  no-permission: '&c你没有权限执行此操作。'
+  player-only: '&c只有玩家可以使用这个命令。'
+  unknown-arena: '&c找不到竞技场：&f%arena%'
+  invalid-arena: '&c竞技场 &f%arena% &c配置不完整，或所在世界尚未加载。'
+  arena-disabled: '&c竞技场 &f%arena% &c当前未启用。'
+  joined: '&a你已加入 &f%arena%&a 队列。（&f%count%&a/&f%max%&a）'
+  job-selected: '&a你已选择 &f%job%&a，并加入 &f%arena%&a 队列。（&f%count%&a/&f%max%&a）'
+  match-running: '&e竞技场 &f%arena% &e的比赛已经开始。'
+  join-guidance: '&e欢迎来到宝库争夺！输入 &f/vr menu &e可重新打开游戏菜单。'
+  job-cooldown: '&e%job% 的主动技能仍在冷却，还需 &f%seconds% &e秒。'
+  job-activated: '&a已使用 %job% 的主动技能：&f%ability%&a。'
+  job-no-target: '&e附近没有可被侦察脉冲标记的敌人。'
+  job-usage: '&e用法：&f/vr job <assault|scout|guardian|engineer|illusionist> [竞技场]'
+  left: '&e你已离开宝库争夺队列或比赛。'
+  already-queued: '&e你已经在队列中或正在比赛。'
+  queue-full: '&c这个竞技场的队列已满。'
+  not-in-game: '&e你当前不在宝库争夺队列或比赛中。'
+  countdown: '&e竞技场 &f%arena% &e将在 &f%seconds% &e秒后开始。'
+  countdown-cancelled: '&c人数不足，倒计时已取消。'
+  arena-unavailable: '&c竞技场 &f%arena% &c当前不可用，倒计时已取消。'
+  world-protection-locked: '&c比赛开始前地图受到保护，不能修改方块。'
+  world-protection-not-participant: '&c只有当前比赛的参赛者可以修改这个世界。'
+  world-protection-limit: '&c本局地图改动已达到安全上限，不能继续修改新方块。'
+  world-protection-start-failed: '&c地图保护无法启动，本场比赛未开始；你仍保留在队列中。'
+  world-protection-world-conflict: '&c竞技场 &f%arena% &c无法启用：世界 &f%world% &c已被另一个竞技场独占。'
+  game-start: '&a宝库争夺开始！收集宝石并带回己方交付点。'
+  gem-picked: '&a你拾取了宝石。当前携带：&f%carried%'
+  gem-deposited: '&a%player% 为 %team% &a交付了 &f%amount% &a颗宝石。当前比分：&f%score%'
+  death-drop: '&e%player% &e掉落了 &f%amount% &e颗宝石。'
+  winner: '&6%team% 获胜！&e最终得分：&f%score%'
+  draw: '&e比赛平局。最终比分：&c%red% &e- &9%blue%'
+  timeout: '&e比赛时间结束！'
+  forced-stop: '&e管理员已停止这场比赛。'
+  admin-created: '&a已创建竞技场 &f%arena%&a。'
+  admin-deleted: '&a已删除竞技场 &f%arena%&a。'
+  admin-set: '&a已为竞技场 &f%arena% &a设置 &f%type%&a。'
+  admin-set-blocked: '&c竞技场 &f%arena% &c已启用或不在等待状态；请先停用后再修改位置。'
+  admin-enabled: '&a已启用竞技场 &f%arena%&a。'
+  admin-disabled: '&e已停用竞技场 &f%arena%&a。'
+  reload: '&a配置已重新加载。'
+  no-arenas: '&e当前没有已配置的竞技场。'
+  list-entry: '&f%arena% &7- &f%state% &7队列=&f%queue% &7比分=&c%red%&7/&9%blue%'
+  help: '&e用法：&f/vr join [竞技场] &7| &f/vr jobs [竞技场] &7| &f/vr job <职业> [竞技场] &7| &f/vr leave &7| &f/vr list &7| &f/vr status [竞技场] &7| &f/vr menu &7| &f/vr shop'
+  admin-help: '&e管理员用法：&f/vr admin create|delete|set|enable|disable|start|stop|reload'
+  missing-arena: '&c请提供竞技场名称。'
+  arena-create-failed: '&c竞技场名称无效，或该竞技场已经存在。'
+  unknown-admin-action: '&c未知的管理员操作。'
+  unknown-location-type: '&c未知的位置类型。'
+  location-help: '&e用法：&f/vr admin set <竞技场> <lobby|red-spawn|blue-spawn|red-deposit|blue-deposit|vault>'
+  not-enough-players: '&c排队玩家人数不足，无法开始比赛。'
+  status: '&6宝库争夺 &7- &f%arena% &7状态：&f%state% &7队列：&f%queue% &c红队：%red% &9蓝队：%blue%'
+  state-waiting: '等待中'
+  state-countdown: '倒计时'
+  state-running: '进行中'
+  state-ending: '结算中'
+  menu-title: '&6宝库争夺菜单'
+  menu-content: |
+    &f请选择一个操作：
+    &7Java 玩家使用箱子菜单，Bedrock 玩家使用中文表单。
+  menu-join: '&a加入游戏'
+  menu-join-description: '加入一个宝库争夺竞技场队列。'
+  menu-leave: '&e离开游戏'
+  menu-leave-description: '离开当前队列或比赛。'
+  menu-list: '&b查看竞技场'
+  menu-list-description: '查看竞技场状态、队列人数和比分。'
+  menu-status: '&d查看状态'
+  menu-status-description: '查看当前比赛状态和比分。'
+  menu-shop: '&6战术商店'
+  menu-shop-description: '在己方交付点打开战术商店。'
+  menu-use: '&f请选择一个操作：'
+  shop-usage: '&e用法：&f/vr shop &7或 &f/vr shop buy <speed|jump|fireball|shield|damage-boost|smoke>'
+  shop-disabled: '&c战术商店当前已关闭。'
+  shop-not-running: '&e战术商店只在进行中的比赛开放。请先使用 &f/vr join &e加入比赛。'
+  shop-not-at-deposit: '&e请返回你队伍的己方交付点后再打开或使用商店。'
+  shop-insufficient: '&c战术币不足。当前余额：&f%balance%'
+  shop-inventory-full: '&c背包已满，请先腾出至少一个空格。'
+  shop-limit: '&c本局购买 &f%item% &c的次数已达上限。'
+  shop-cooldown: '&e%item% 仍在冷却，还需 &f%seconds% &e秒。'
+  shop-purchased: '&a已购买 &f%item%&a。剩余战术币：&f%balance%'
+  shop-activated: '&a已使用 &f%item%&a。'
+  currency-kill: '&a击杀敌人获得 &f%amount% &a战术币。余额：&f%balance%'
+  currency-deposit: '&a交付奖励 &f%amount% &a战术币。余额：&f%balance%'
+arenas: {}
