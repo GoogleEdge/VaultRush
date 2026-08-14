@@ -248,6 +248,21 @@ world-protection:
 
 达到 `max-recorded-blocks` 后，插件会拒绝新的坐标改动，避免继续产生无法完整恢复的地图变化。职业、战术商店和消息文本也都可以在 `jobs`、`shop`、`messages` 节点中调整。
 
+### 服务器语言与国际化
+
+Vault Rush 提供服务器级（不是按玩家）的中文和英文消息资源：
+
+```yaml
+settings:
+  language: zh # zh 或 en
+```
+
+- 默认语言是中文 `zh`；设置为 `en` 后优先使用 `locales/en.yml`。
+- 英文资源缺少某个键时会回退到中文资源，再回退到代码中的安全默认文本。
+- 插件不会自动读取玩家客户端语言，也没有逐玩家语言命令。
+- 旧配置中的自定义 `messages.*` 文本会保留，并优先于打包的语言资源。
+- `saveDefaultConfig()` 不会合并已有配置；如果旧服务器显式设置了 `messages.menu-item-name: '&b物品栏'`，请删除该旧覆盖或改成 `&b打开菜单` 后执行 `/vr admin reload`。
+
 ### 升级旧配置
 
 `saveDefaultConfig()` 不会把新键自动合并进已有的 `plugins/VaultRush/config.yml`。升级前请备份配置并保留现有 `arenas`，然后手动合并当前版本新增或变化的节点：
@@ -274,6 +289,12 @@ world-protection:
 - 服务器或 JVM 强制崩溃、断电、外部地图编辑器，以及其他插件绕过 Bukkit/Paper 事件直接写入方块的情况，不保证能够恢复；请继续使用常规磁盘备份。
 - 容器和特殊 TileState 使用 Paper `BlockState` 尽力还原，正式部署前应在实际地图和 Leaf 环境中验收。
 - pending restore 主要保存在运行时内存中；服务器完全停止后，不应把它当作持久化备份。
+
+### 性能与部署验收
+
+本版本减少了若干已知的同步峰值：菜单物品无变化时不会重复同步整个背包，纯视角移动不会重复执行交付距离检查，活跃玩家的比赛查找使用缓存，计分板只更新变化的行。地图恢复和 Bukkit 世界操作仍然在主线程执行。
+
+这些改动不能替代真实服务器验收，也不能保证已经解决所有卡顿或掉线。请在 Leaf 1.21.11 + Java 21 上使用 Spark 对空闲、移动、比赛计时、交付和结束恢复阶段记录 MSPT/TPS，并分别检查 Java 客户端、Geyser/Floodgate 和 Velocity 日志。
 
 ## 常见问题
 
