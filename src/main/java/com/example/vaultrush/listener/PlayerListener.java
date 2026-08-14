@@ -8,6 +8,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -25,12 +26,15 @@ public final class PlayerListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        boolean restored = plugin.cleanupService()
-                .restorePending(event.getPlayer());
-        plugin.send(event.getPlayer(), "join-guidance", java.util.Map.of());
-        if (restored || !plugin.autoOpenMenuOnJoin()) return;
+        Player player = event.getPlayer();
+        boolean hadPendingRestore = plugin.cleanupService()
+                .hasPendingRestore(player.getUniqueId());
+        boolean restored = plugin.cleanupService().restorePending(player);
+        if (!hadPendingRestore || restored) plugin.menuItemService().ensure(player);
+        plugin.send(player, "join-guidance", java.util.Map.of());
+        if (hadPendingRestore || !plugin.autoOpenMenuOnJoin()) return;
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            if (event.getPlayer().isOnline()) plugin.menuService().open(event.getPlayer());
+            if (player.isOnline()) plugin.menuService().open(player);
         }, 1L);
     }
 
@@ -57,12 +61,34 @@ public final class PlayerListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
         if (!event.getAction().isRightClick()) return;
-        if (event.getHand() != null
-                && (plugin.jobService().activate(event.getPlayer(), event.getHand())
-                || plugin.shopService().activate(event.getPlayer(), event.getHand()))) {
-            event.setCancelled(true);
+        if (event.getHand() != null) {
+            com.example.vaultrush.menu.PlayerMenuItemService.ActivationResult menu =
+                    plugin.menuItemService().activate(event.getPlayer(), event.getHand());
+            if (menu != com.example.vaultrush.menu.PlayerMenuItemService.ActivationResult.NONE) {
+                event.setCancelled(true);
+                return;
+            }
+            if (plugin.jobService().activate(event.getPlayer(), event.getHand())
+                    || plugin.shopService().activate(event.getPlayer(), event.getHand())) {
+                event.setCancelled(true);
+            }
         }
         checkDeposit(event.getPlayer(), event.getPlayer().getLocation());
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onInteractEntity(PlayerInteractEntityEvent event) {
+        if (event.getHand() == null) return;
+        com.example.vaultrush.menu.PlayerMenuItemService.ActivationResult menu =
+                plugin.menuItemService().activate(event.getPlayer(), event.getHand());
+        if (menu != com.example.vaultrush.menu.PlayerMenuItemService.ActivationResult.NONE) {
+            event.setCancelled(true);
+            return;
+        }
+        if (plugin.jobService().activate(event.getPlayer(), event.getHand())
+                || plugin.shopService().activate(event.getPlayer(), event.getHand())) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -88,6 +114,7 @@ public final class PlayerListener implements Listener {
         plugin.jobSelectionService().close(event.getPlayer());
         plugin.matchController().handleQuit(event.getPlayer().getUniqueId());
         plugin.worldProtectionService().forgetPlayer(event.getPlayer().getUniqueId());
+        plugin.menuItemService().forgetPlayer(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -97,6 +124,7 @@ public final class PlayerListener implements Listener {
         plugin.jobSelectionService().close(event.getPlayer());
         plugin.matchController().handleQuit(event.getPlayer().getUniqueId());
         plugin.worldProtectionService().forgetPlayer(event.getPlayer().getUniqueId());
+        plugin.menuItemService().forgetPlayer(event.getPlayer().getUniqueId());
     }
 
     private void checkDeposit(Player player, org.bukkit.Location candidate) {

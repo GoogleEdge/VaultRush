@@ -110,6 +110,7 @@ public final class MatchController {
                 if (player == null || !player.isOnline()) continue;
                 plugin.menuService().close(player);
                 plugin.jobSelectionService().close(player);
+                plugin.menuItemService().ensure(player);
                 PlayerSession session = new PlayerSession(uuid, team,
                         PlayerSnapshot.capture(player),
                         queuedJobs.getOrDefault(uuid, JobType.ASSAULT));
@@ -365,6 +366,7 @@ public final class MatchController {
         player.setFoodLevel(20);
         player.setSaturation(5.0f);
         if (player.getMaxHealth() > 0) player.setHealth(player.getMaxHealth());
+        plugin.menuItemService().ensure(player);
         giveKit(player, team);
         PlayerSession session = match.sessions().get(player.getUniqueId());
         if (session != null) plugin.jobService().prepare(player, match, session);

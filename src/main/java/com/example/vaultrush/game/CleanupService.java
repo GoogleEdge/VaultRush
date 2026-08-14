@@ -83,13 +83,16 @@ public final class CleanupService {
         if (failure != null) throw failure;
     }
 
+    public boolean hasPendingRestore(UUID uuid) {
+        return uuid != null && pendingRestores.containsKey(uuid);
+    }
+
     public boolean restorePending(Player player) {
         if (player == null || !player.isOnline()) return false;
         com.example.vaultrush.model.PlayerSnapshot snapshot =
-                pendingRestores.remove(player.getUniqueId());
+                pendingRestores.get(player.getUniqueId());
         if (snapshot == null) return false;
-        restore(player, snapshot);
-        return true;
+        return restore(player, snapshot);
     }
 
     private void restore(PlayerSession session) {
@@ -98,17 +101,22 @@ public final class CleanupService {
             pendingRestores.put(session.uniqueId(), session.snapshot());
             return;
         }
-        restore(player, session.snapshot());
+        if (restore(player, session.snapshot())) {
+            plugin.menuItemService().ensure(player);
+        }
     }
 
-    private void restore(Player player,
-                         com.example.vaultrush.model.PlayerSnapshot snapshot) {
+    private boolean restore(Player player,
+                            com.example.vaultrush.model.PlayerSnapshot snapshot) {
         try {
             snapshot.restore(player);
+            pendingRestores.remove(player.getUniqueId());
+            return true;
         } catch (RuntimeException exception) {
             pendingRestores.put(player.getUniqueId(), snapshot);
             plugin.getLogger().warning("Could not restore " + player.getName()
                     + ": " + exception.getMessage());
+            return false;
         }
     }
 }

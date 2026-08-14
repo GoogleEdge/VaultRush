@@ -23,6 +23,8 @@ settings:
   pickup-delay-ticks: 10
   menu:
     auto-open-on-join: true
+    item:
+      material: NETHER_STAR
   kit:
     sword: STONE_SWORD
     blocks: 32
@@ -178,6 +180,10 @@ messages:
   menu-shop: '&6战术商店'
   menu-shop-description: '在己方交付点打开战术商店。'
   menu-use: '&f请选择一个操作：'
+  menu-item-name: '&b物品栏'
+  menu-item-lore: '&7右键打开宝库争夺菜单。'
+  menu-item-inventory-full: '&e背包已满，无法放入“物品栏”菜单物品；请先空出一个普通背包格。'
+  menu-item-invalid: '&c这个菜单物品无效，已移除。请使用新的“物品栏”物品。'
   shop-usage: '&e用法：&f/vr shop &7或 &f/vr shop buy <speed|jump|fireball|shield|damage-boost|smoke>'
   shop-disabled: '&c战术商店当前已关闭。'
   shop-not-running: '&e战术商店只在进行中的比赛开放。请先使用 &f/vr join &e加入比赛。'

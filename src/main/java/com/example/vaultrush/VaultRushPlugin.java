@@ -18,6 +18,7 @@ import com.example.vaultrush.listener.WorldProtectionListener;
 import com.example.vaultrush.menu.BedrockBridgeLoader;
 import com.example.vaultrush.menu.BedrockMenuBridge;
 import com.example.vaultrush.menu.JobSelectionService;
+import com.example.vaultrush.menu.PlayerMenuItemService;
 import com.example.vaultrush.menu.PlayerMenuService;
 import com.example.vaultrush.menu.ShopInventoryService;
 import org.bukkit.ChatColor;
@@ -44,7 +45,9 @@ public final class VaultRushPlugin extends JavaPlugin {
             Map.entry("world-protection-not-participant", "&c只有当前比赛的参赛者可以修改这个世界。"),
             Map.entry("world-protection-limit", "&c本局地图改动已达到安全上限，不能继续修改新方块。"),
             Map.entry("world-protection-start-failed", "&c地图保护无法启动，本场比赛未开始；你仍保留在队列中。"),
-            Map.entry("world-protection-world-conflict", "&c竞技场 &f%arena% &c无法启用：世界 &f%world% &c已被另一个竞技场独占。")
+            Map.entry("world-protection-world-conflict", "&c竞技场 &f%arena% &c无法启用：世界 &f%world% &c已被另一个竞技场独占。"),
+            Map.entry("menu-item-inventory-full", "&e背包已满，无法放入“物品栏”菜单物品；请先空出一个普通背包格。"),
+            Map.entry("menu-item-invalid", "&c这个菜单物品无效，已移除。请使用新的“物品栏”物品。")
     );
     private ArenaManager arenaManager;
     private QueueService queueService;
@@ -54,6 +57,7 @@ public final class VaultRushPlugin extends JavaPlugin {
     private ScoreboardService scoreboardService;
     private CleanupService cleanupService;
     private PlayerMenuService menuService;
+    private PlayerMenuItemService menuItemService;
     private ShopService shopService;
     private ShopInventoryService shopInventoryService;
     private JobService jobService;
@@ -75,6 +79,7 @@ public final class VaultRushPlugin extends JavaPlugin {
                 scoreboardService, cleanupService);
         BedrockMenuBridge bedrockBridge = BedrockBridgeLoader.load(this);
         menuService = new PlayerMenuService(this, bedrockBridge);
+        menuItemService = new PlayerMenuItemService(this);
         shopService = new ShopService(this, arenaManager, vaultService);
         shopInventoryService = new ShopInventoryService(this, shopService, bedrockBridge);
         jobService = new JobService(this);
@@ -89,9 +94,11 @@ public final class VaultRushPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new CombatRuleListener(this), this);
         getServer().getPluginManager().registerEvents(new WorldProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(menuService, this);
+        getServer().getPluginManager().registerEvents(menuItemService, this);
         getServer().getPluginManager().registerEvents(shopInventoryService, this);
         getServer().getPluginManager().registerEvents(jobSelectionService, this);
         gemService.clearPluginOwnedEntities();
+        menuItemService.refreshOnlinePlayers();
         getLogger().info("VaultRush enabled with " + arenaManager.all().size() + " configured arena(s).");
     }
 
@@ -111,6 +118,7 @@ public final class VaultRushPlugin extends JavaPlugin {
         reloadConfig();
         arenaManager.load();
         gemService.clearPluginOwnedEntities();
+        if (menuItemService != null) menuItemService.refreshOnlinePlayers();
     }
 
     public ArenaManager arenaManager() { return arenaManager; }
@@ -121,6 +129,7 @@ public final class VaultRushPlugin extends JavaPlugin {
     public ScoreboardService scoreboardService() { return scoreboardService; }
     public CleanupService cleanupService() { return cleanupService; }
     public PlayerMenuService menuService() { return menuService; }
+    public PlayerMenuItemService menuItemService() { return menuItemService; }
     public ShopService shopService() { return shopService; }
     public ShopInventoryService shopInventoryService() { return shopInventoryService; }
     public JobService jobService() { return jobService; }
@@ -157,6 +166,10 @@ public final class VaultRushPlugin extends JavaPlugin {
     public int kitFood() { return Math.max(0, getConfig().getInt("settings.kit.food", 8)); }
 
     public Material gemMaterial() { return material("settings.gem-material", Material.EMERALD); }
+    public Material menuItemMaterial() {
+        Material material = material("settings.menu.item.material", Material.NETHER_STAR);
+        return material.isAir() ? Material.NETHER_STAR : material;
+    }
     public String gemName() { return getConfig().getString("settings.gem-name", "&aVault Gem"); }
     public Material kitSword() { return material("settings.kit.sword", Material.STONE_SWORD); }
     public Material kitBlockMaterial() { return material("settings.kit.block-material", Material.WHITE_WOOL); }
