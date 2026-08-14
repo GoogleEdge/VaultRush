@@ -18,8 +18,8 @@ MVP 不包含 RPG 等级、永久属性、经济、数据库统计或自动地�
 - 玩家必须在入队前选择本局职业；职业与 queue 同步原子写入，比赛开始后锁定，并转移到 `PlayerSession`。关闭职业选择界面不会入队。
 - 职业仅属于当前回合，不提供等级、永久属性、数据库或跨局成长；离场、结束、强停、重载和停服后清空。
 - 玩家加入服务器时始终收到中文 `/vr menu` 提示；自动打开菜单仍由 `settings.menu.auto-open-on-join` 独立控制。
-- 插件会在玩家背包生命周期中维护一个名为“物品栏”的菜单物品：首次补发优先使用快捷栏第 9 格（PlayerInventory slot 8），该格有普通物品时改用其他空的普通背包槽位；普通背包全满时只提示玩家，不覆盖或丢弃任何原物品。
-- “物品栏”物品通过插件 PDC 标记、玩家 UUID 和稳定 token 校验，不依赖材质或名称。右键合法物品会打开与 `/vr menu` 相同的 Java 箱子菜单或 Bedrock SimpleForm；物品不消耗，普通玩家不能将其丢弃、放置、转移到容器或作为死亡掉落。加入、重生、比赛切换、快照恢复、重载和重新加入时会幂等维护它；满背包时仍可使用 `/vr menu`。这不是数据库、永久经济或跨服数据。
+- 插件会在玩家背包生命周期中维护一个名为“打开菜单”的菜单物品：首次补发优先使用快捷栏第 9 格（PlayerInventory slot 8），该格有普通物品时改用其他空的普通背包槽位；普通背包全满时只提示玩家，不覆盖或丢弃任何原物品。
+- “打开菜单”物品通过插件 PDC 标记、玩家 UUID 和稳定 token 校验，不依赖材质或名称。右键合法物品会打开与 `/vr menu` 相同的 Java 箱子菜单或 Bedrock SimpleForm；物品不消耗，普通玩家不能将其丢弃、放置、转移到容器或作为死亡掉落。加入、重生、比赛切换、快照恢复、重载和重新加入时会幂等维护它；满背包时仍可使用 `/vr menu`。这不是数据库、永久经济或跨服数据。
 - 中央宝库按 `gem-spawn-interval-seconds` 生成宝石，中央同时存在的宝石不超过 `max-vault-gems`。
 - 宝石是带有 PersistentDataContainer 标记的自定义物品，不能仅凭材质判断。
 - 参赛者拾取宝石后，宝石计入携带数而不会占用玩家背包。
@@ -72,7 +72,7 @@ arenas:
 - `/vr leave`：离开队列或比赛。
 - `/vr list`：列出 arena 状态、队列人数和比分。
 - `/vr status [arena]`：查看一个 arena 的状态。
-- `/vr menu`：重新打开中文玩家主菜单。Java 玩家看到 27 格箱子式 Inventory GUI；安装并正确配置 Floodgate 后的 Bedrock 玩家看到 SimpleForm。主菜单按钮分别执行 `/vr join`、`/vr leave`、`/vr list`、`/vr status` 和 `/vr shop`，普通命令仍可直接输入。右键合法的“物品栏”菜单物品也会打开同一主菜单；背包全满或物品暂未补发时仍可使用此命令。
+- `/vr menu`：重新打开中文玩家主菜单。Java 玩家看到 27 格箱子式 Inventory GUI；安装并正确配置 Floodgate 后的 Bedrock 玩家看到 SimpleForm。主菜单按钮分别执行 `/vr join`、`/vr leave`、`/vr list`、`/vr status` 和 `/vr shop`，普通命令仍可直接输入。右键合法的“打开菜单”菜单物品也会打开同一主菜单；背包全满或物品暂未补发时仍可使用此命令。
 - `/vr shop`：在己方交付点打开战术商店；Java 使用 27 格箱子 GUI，Bedrock 使用中文 SimpleForm。
 - `/vr shop buy <speed|jump|fireball|shield|damage-boost|smoke>`：聊天备用购买入口。
 
@@ -105,7 +105,7 @@ arenas:
 - `CleanupService`：停服和异常路径的统一清理。
 - `PlayerSnapshot`、`LocationCodec`：玩家状态和位置快照。
 - `PlayerMenuService`、`MenuAction`：中文主菜单内容、Java 箱子 GUI、Bedrock 表单分流和命令分发。
-- `PlayerMenuItemService`：生成和维护“物品栏”菜单物品，通过 PDC、owner UUID 和 token 校验，阻止其离开玩家普通 storage 或被消耗，并将合法右键转发到 `PlayerMenuService.open(Player)`；普通 storage 内允许玩家整理。
+- `PlayerMenuItemService`：生成和维护“打开菜单”菜单物品，通过 PDC、owner UUID 和 token 校验，阻止其离开玩家普通 storage 或被消耗，并将合法右键转发到 `PlayerMenuService.open(Player)`；普通 storage 内允许玩家整理。
 - `MainMenuInventoryHolder`：独立于战术商店的主菜单持有者，保存玩家 UUID、菜单 generation/token 和 Inventory 引用。
 - `BedrockMenuBridge`、`FloodgateMenuBridge`：可选 Floodgate 表单适配；没有 Floodgate 时使用空桥接并让 Java 玩家使用箱子主菜单。
 
@@ -189,7 +189,7 @@ Floodgate 是可选的 `compileOnly` 依赖，插件使用 `softdepend` 控制�
 ### 9.5 清理要求
 
 - 比赛结束、玩家离开、被踢、强制停止、重载和插件禁用时，关闭 Java 主菜单、战术商店 GUI 和 Bedrock 表单。
-- 取消或使所有商店回调、冷却、效果和临时任务失效，清理插件标记的临时物品/实体；持久“物品栏”菜单物品不属于临时比赛物品，按玩家快照恢复并由维护逻辑保留或补发。
+- 取消或使所有商店回调、冷却、效果和临时任务失效，清理插件标记的临时物品/实体；持久“打开菜单”菜单物品不属于临时比赛物品，按玩家快照恢复并由维护逻辑保留或补发。
 - 清理完成后由 `PlayerSnapshot` 恢复玩家局前背包、属性、位置和计分板；商店状态不跨局保留。
 
 ## 10. 验收标准
@@ -201,7 +201,7 @@ Floodgate 是可选的 `compileOnly` 依赖，插件使用 `softdepend` 控制�
 5. 宝石生成、拾取、死亡掉落、争夺、己方交付、目标分获胜和超时判定正确。
 6. 退出、踢出、死亡、强制停止和插件禁用后没有孤立任务或残留标记宝石。
 7. 玩家比赛前状态能够恢复，普通物品、方块和其他插件实体不被清理。
-8. 没有 Floodgate 时插件正常加载，Java 玩家可在加入时、通过 `/vr menu` 或合法“物品栏”物品右键使用中文箱子主菜单；无权限、关闭菜单或自动打开关闭时，普通 `/vr` 命令仍可直接使用。物品不消耗或转入其他容器，普通背包全满时不覆盖原物品并提示使用 `/vr menu`，死亡、重生、比赛恢复、重载和重新加入时继续维护。
+8. 没有 Floodgate 时插件正常加载，Java 玩家可在加入时、通过 `/vr menu` 或合法“打开菜单”物品右键使用中文箱子主菜单；无权限、关闭菜单或自动打开关闭时，普通 `/vr` 命令仍可直接使用。物品不消耗或转入其他容器，普通背包全满时不覆盖原物品并提示使用 `/vr menu`，死亡、重生、比赛恢复、重载和重新加入时继续维护。
 9. 安装并配置 Floodgate 时，在线 Bedrock 玩家可收到中文 SimpleForm，且不会同时打开 Java 箱子；Java 玩家使用箱子主菜单。表单关闭、过期或发送失败不会执行错误操作；商店表单失败时仅回退到商店专用聊天购买入口。
 10. 击杀和成功交付按配置奖励战术币；环境死亡、自杀和队友不奖励；每局结束后余额、次数、冷却和效果全部重置。
 11. 六种道具均遵守价格、冷却和购买次数；失败购买不改变余额或计数。

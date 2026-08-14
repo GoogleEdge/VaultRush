@@ -25,7 +25,13 @@ public enum JobType {
 
     public String id() { return id; }
     public String displayName() { return displayName; }
+    public String displayName(com.example.vaultrush.VaultRushPlugin plugin) {
+        return plugin.menuText("job-" + id, displayName, java.util.Map.of());
+    }
     public String abilityName() { return abilityName; }
+    public String abilityName(com.example.vaultrush.VaultRushPlugin plugin) {
+        return plugin.menuText("job-" + id + "-ability", abilityName, java.util.Map.of());
+    }
     public Material icon() { return icon; }
     public String configPath() { return "jobs." + id; }
 

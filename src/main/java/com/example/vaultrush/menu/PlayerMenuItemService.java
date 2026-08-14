@@ -77,16 +77,22 @@ public final class PlayerMenuItemService implements Listener {
 
         String token = playerToken(player);
         ItemStack[] storage = player.getInventory().getStorageContents();
+        boolean storageChanged = false;
         int validSlot = -1;
         for (int slot : MenuItemPlacement.scanOrder(storage.length, PREFERRED_SLOT)) {
             ItemStack stack = storage[slot];
             if (!isMarked(stack)) continue;
             if (validSlot < 0 && isValid(stack, player.getUniqueId(), token)) {
                 validSlot = slot;
-                storage[slot] = createItem(player, token);
+                ItemStack desired = createItem(player, token);
+                if (!sameItem(stack, desired)) {
+                    storage[slot] = desired;
+                    storageChanged = true;
+                }
             } else {
                 // Remove duplicate, malformed, stale, or foreign plugin markers.
                 storage[slot] = null;
+                storageChanged = true;
             }
         }
 
@@ -95,8 +101,9 @@ public final class PlayerMenuItemService implements Listener {
         if (validSlot >= 0) {
             // A valid item already exists in ordinary storage; clear stray
             // copies outside storage and retain the storage item in place.
-            clearMarkedNonStorageItems(player, player.getUniqueId(), token, false);
-            writeStorage(player, storage);
+            boolean nonStorageChanged = clearMarkedNonStorageItems(
+                    player, player.getUniqueId(), token, false);
+            writeInventory(player, storage, storageChanged, nonStorageChanged);
             return EnsureResult.PRESENT;
         }
 
@@ -104,15 +111,16 @@ public final class PlayerMenuItemService implements Listener {
         if (emptySlot < 0) {
             // Do not destroy a valid externally-moved item merely because the
             // ordinary storage is full. Invalid/foreign markers are still removed.
-            clearMarkedNonStorageItems(player, player.getUniqueId(), token,
-                    validNonStorage);
-            writeStorage(player, storage);
+            boolean nonStorageChanged = clearMarkedNonStorageItems(
+                    player, player.getUniqueId(), token, validNonStorage);
+            writeInventory(player, storage, storageChanged, nonStorageChanged);
             notifyFull(player);
             return EnsureResult.FULL;
         }
-        clearMarkedNonStorageItems(player, player.getUniqueId(), token, false);
+        boolean nonStorageChanged = clearMarkedNonStorageItems(
+                player, player.getUniqueId(), token, false);
         storage[emptySlot] = createItem(player, token);
-        writeStorage(player, storage);
+        writeInventory(player, storage, true, nonStorageChanged);
         return EnsureResult.ADDED;
     }
 
@@ -384,7 +392,7 @@ public final class PlayerMenuItemService implements Listener {
         ItemStack stack = new ItemStack(material, 1);
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) return stack;
-        meta.setDisplayName(plugin.menuText("menu-item-name", "&b物品栏", Map.of()));
+        meta.setDisplayName(plugin.menuText("menu-item-name", "&b打开菜单", Map.of()));
         String lore = plugin.menuText(
                 "menu-item-lore", "&7右键打开宝库争夺菜单。", Map.of());
         meta.setLore(List.of(lore.split("\\R", -1)));
@@ -428,8 +436,9 @@ public final class PlayerMenuItemService implements Listener {
         return isValid(player.getInventory().getItemInOffHand(), owner, token);
     }
 
-    private void clearMarkedNonStorageItems(Player player, UUID owner,
+    private boolean clearMarkedNonStorageItems(Player player, UUID owner,
                                             String token, boolean preserveValid) {
+        boolean changed = false;
         ItemStack[] armor = player.getInventory().getArmorContents();
         boolean armorChanged = false;
         boolean preserved = false;
@@ -444,7 +453,10 @@ public final class PlayerMenuItemService implements Listener {
             armor[index] = null;
             armorChanged = true;
         }
-        if (armorChanged) player.getInventory().setArmorContents(armor);
+        if (armorChanged) {
+            player.getInventory().setArmorContents(armor);
+            changed = true;
+        }
 
         ItemStack[] extra = player.getInventory().getExtraContents();
         boolean extraChanged = false;
@@ -459,20 +471,30 @@ public final class PlayerMenuItemService implements Listener {
             extra[index] = null;
             extraChanged = true;
         }
-        if (extraChanged) player.getInventory().setExtraContents(extra);
+        if (extraChanged) {
+            player.getInventory().setExtraContents(extra);
+            changed = true;
+        }
 
         ItemStack offhand = player.getInventory().getItemInOffHand();
         if (isMarked(offhand)) {
             boolean valid = isValid(offhand, owner, token);
             if (!(preserveValid && valid && !preserved)) {
                 player.getInventory().setItemInOffHand(new ItemStack(Material.AIR));
+                changed = true;
             }
         }
+        return changed;
     }
 
-    private void writeStorage(Player player, ItemStack[] storage) {
-        player.getInventory().setStorageContents(storage);
-        player.updateInventory();
+    private void writeInventory(Player player, ItemStack[] storage,
+                                boolean storageChanged, boolean otherChanged) {
+        if (storageChanged) player.getInventory().setStorageContents(storage);
+        if (storageChanged || otherChanged) player.updateInventory();
+    }
+
+    private boolean sameItem(ItemStack first, ItemStack second) {
+        return first == second || first != null && first.equals(second);
     }
 
     private void clearHand(Player player, EquipmentSlot hand) {

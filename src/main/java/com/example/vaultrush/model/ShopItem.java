@@ -24,6 +24,9 @@ public enum ShopItem {
 
     public String id() { return id; }
     public String displayName() { return displayName; }
+    public String displayName(com.example.vaultrush.VaultRushPlugin plugin) {
+        return plugin.menuText("shop-item-" + id, displayName, java.util.Map.of());
+    }
     public Material icon() { return icon; }
     public String configPath() { return "shop.items." + id; }
 

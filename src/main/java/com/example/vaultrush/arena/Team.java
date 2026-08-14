@@ -18,11 +18,20 @@ public enum Team {
         return displayName;
     }
 
+    public String displayName(com.example.vaultrush.VaultRushPlugin plugin) {
+        return plugin.menuText("team-" + name().toLowerCase(java.util.Locale.ROOT),
+                displayName, java.util.Map.of());
+    }
+
     public ChatColor color() {
         return color;
     }
 
     public String coloredName() {
         return color + displayName;
+    }
+
+    public String coloredName(com.example.vaultrush.VaultRushPlugin plugin) {
+        return color + displayName(plugin);
     }
 }

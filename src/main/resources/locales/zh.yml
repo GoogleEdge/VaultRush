@@ -1,115 +1,3 @@
-world-protection:
-  # 已启用竞技场的整个世界将作为专用比赛世界受到保护。
-  enabled: true
-  # 达到上限后会拒绝新的方块修改，避免出现无法回滚的改动。
-  max-recorded-blocks: 50000
-  message-cooldown-ticks: 20
-settings:
-  # Server-wide language: zh (Chinese) or en (English). Missing English keys fall back to Chinese.
-  language: zh
-  min-players: 2
-  max-players: 8
-  team-size: 4
-  countdown-seconds: 10
-  match-duration-seconds: 600
-  score-to-win: 10
-  gem-spawn-interval-seconds: 8
-  max-vault-gems: 3
-  death-gems: 1
-  drop-carried-gems: true
-  gem-material: EMERALD
-  gem-name: '&a宝石'
-  vault-radius: 3.0
-  deposit-vertical-radius: 4.0
-  respawn-delay-ticks: 20
-  pickup-delay-ticks: 10
-  menu:
-    auto-open-on-join: true
-    item:
-      material: NETHER_STAR
-  kit:
-    sword: STONE_SWORD
-    blocks: 32
-    block-material: WHITE_WOOL
-    food: 8
-jobs:
-  assault:
-    passive:
-      damage-multiplier: 1.10
-    active:
-      horizontal-power: 1.25
-      vertical-power: 0.45
-      cooldown-seconds: 24
-  scout:
-    passive:
-      duration-seconds: 3
-      cooldown-seconds: 10
-    active:
-      radius: 24.0
-      duration-seconds: 5
-      cooldown-seconds: 30
-  guardian:
-    passive:
-      damage-multiplier: 0.85
-    active:
-      duration-seconds: 4
-      cooldown-seconds: 30
-  engineer:
-    extra-blocks: 16
-    active:
-      duration-seconds: 8
-      cooldown-seconds: 25
-  illusionist:
-    passive:
-      duration-seconds: 2
-      cooldown-seconds: 15
-    active:
-      duration-seconds: 5
-      cooldown-seconds: 25
-shop:
-  enabled: true
-  currency:
-    kill-reward: 3
-    deposit-reward-per-gem: 1
-  items:
-    speed:
-      cost: 5
-      duration-seconds: 10
-      amplifier: 1
-      cooldown-seconds: 20
-      purchase-limit: 3
-    jump:
-      cost: 4
-      duration-seconds: 10
-      amplifier: 1
-      cooldown-seconds: 20
-      purchase-limit: 3
-    fireball:
-      cost: 8
-      cooldown-seconds: 12
-      purchase-limit: 3
-      # 近似向上弹射 8 格；实际高度受服务器物理和周围方块影响。
-      horizontal-power: 1.8
-      vertical-power: 1.6
-    shield:
-      cost: 7
-      duration-seconds: 8
-      damage-reduction-percent: 30
-      cooldown-seconds: 25
-      purchase-limit: 2
-    damage-boost:
-      cost: 9
-      duration-seconds: 8
-      bonus-damage: 3.0
-      cooldown-seconds: 25
-      purchase-limit: 2
-    smoke:
-      cost: 6
-      duration-seconds: 8
-      amplifier: 1
-      radius: 8.0
-      cooldown-seconds: 20
-      purchase-limit: 3
 messages:
   prefix: '&6[宝库争夺]&r '
   no-permission: '&c你没有权限执行此操作。'
@@ -168,9 +56,7 @@ messages:
   state-running: '进行中'
   state-ending: '结算中'
   menu-title: '&6宝库争夺菜单'
-  menu-content: |
-    &f请选择一个操作：
-    &7Java 玩家使用箱子菜单，Bedrock 玩家使用中文表单。
+  menu-content: '&f请选择一个操作：\\n&7Java 玩家使用箱子菜单，Bedrock 玩家使用中文表单。'
   menu-join: '&a加入游戏'
   menu-join-description: '加入一个宝库争夺竞技场队列。'
   menu-leave: '&e离开游戏'
@@ -182,6 +68,16 @@ messages:
   menu-shop: '&6战术商店'
   menu-shop-description: '在己方交付点打开战术商店。'
   menu-use: '&f请选择一个操作：'
+  menu-click-command: '点击执行 /vr %command%'
+  job-ability-label: '主动技能：%ability%'
+  job-queue-hint: '选择后加入比赛队列'
+  job-ability-item-suffix: '（职业技能）'
+  job-ability-use: '手持右键使用；不会被消耗'
+  shop-chat-entry: '%id% - %item% | %description% | %cost% 战术币 | %status%  /vr shop buy %command%'
+  shop-status-unavailable: '不可用'
+  shop-ability-use: '手持右键使用；不会被消耗'
+  shop-bedrock-entry: '%item%\n价格：%cost% 战术币 · %status%'
+  gem-name: '&a宝石'
   menu-item-name: '&b打开菜单'
   menu-item-lore: '&7右键打开宝库争夺菜单。'
   menu-item-inventory-full: '&e背包已满，无法放入“打开菜单”物品；请先空出一个普通背包格。'
@@ -198,4 +94,52 @@ messages:
   shop-activated: '&a已使用 &f%item%&a。'
   currency-kill: '&a击杀敌人获得 &f%amount% &a战术币。余额：&f%balance%'
   currency-deposit: '&a交付奖励 &f%amount% &a战术币。余额：&f%balance%'
-arenas: {}
+  scoreboard-title: '&6宝库争夺'
+  scoreboard-divider: '&7────────────'
+  scoreboard-red: '&c红队：&f%score%'
+  scoreboard-blue: '&9蓝队：&f%score%'
+  scoreboard-job: '&d职业：&f%job%'
+  scoreboard-carried: '&e携带：&f%amount%'
+  scoreboard-currency: '&6战术币：&f%amount%'
+  scoreboard-target: '&a目标：&f%score%'
+  scoreboard-time: '&b时间：&f%time%'
+  team-red: '红队'
+  team-blue: '蓝队'
+  job-assault: '突击手'
+  job-assault-ability: '冲锋'
+  job-scout: '侦察者'
+  job-scout-ability: '侦察脉冲'
+  job-guardian: '守护者'
+  job-guardian-ability: '坚守护盾'
+  job-engineer: '工程师'
+  job-engineer-ability: '快速施工'
+  job-illusionist: '幻术师'
+  job-illusionist-ability: '幻影'
+  shop-item-speed: '迅捷'
+  shop-item-jump: '跳跃'
+  shop-item-fireball: '位移烈焰弹'
+  shop-item-shield: '战术护盾'
+  shop-item-damage-boost: '伤害增益'
+  shop-item-smoke: '烟雾干扰'
+  job-description-assault: '对敌伤害提高 10%；主动冲锋'
+  job-description-scout: '拾取宝石获得短暂加速；主动标记附近敌人'
+  job-description-guardian: '受到敌人伤害降低 15%；主动获得抗性提升'
+  job-description-engineer: '额外获得建筑方块；主动获得急迫 II'
+  job-description-illusionist: '拾取宝石短暂隐身；主动进入幻影状态'
+  shop-description-speed: '短时间获得速度 II'
+  shop-description-jump: '短时间获得跳跃提升 II'
+  shop-description-fireball: '水平前冲并向上约 8 格，不爆炸、不点火、不伤人'
+  shop-description-shield: '短时间降低受到的伤害'
+  shop-description-damage-boost: '短时间增加对敌伤害'
+  shop-description-smoke: '使 8 格内敌人获得失明 II，默认约 8 秒'
+  job-menu-title: '&6选择职业 · %arena%'
+  job-menu-content: '选择职业后才会加入 %arena% 的队列。'
+  shop-menu-title: '&2宝库争夺战术商店'
+  shop-menu-content: '余额：%balance% 战术币\\n购买后道具进入背包，右键使用。'
+  shop-menu-header: '=== 战术商店（余额 %balance%）==='
+  shop-price: '价格：%cost% 战术币'
+  shop-balance: '余额：%balance%'
+  shop-buy-use: '购买后右键使用'
+  shop-status-available: '可购买；次数 %count%'
+  shop-status-cooldown: '冷却 %seconds%秒；次数 %count%'
+  shop-status-unlimited: '不限'

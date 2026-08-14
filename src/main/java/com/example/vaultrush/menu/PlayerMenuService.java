@@ -130,7 +130,9 @@ public final class PlayerMenuService implements Listener {
             meta.setDisplayName(menuLabel(action));
             List<String> lore = new ArrayList<>(Arrays.asList(
                     menuDescription(action).split("\\R", -1)));
-            lore.add(ChatColor.DARK_GRAY + "点击执行 /vr " + action.command());
+            lore.add(ChatColor.DARK_GRAY + plugin.menuText(
+                    "menu-click-command", "点击执行 /vr %command%",
+                    Map.of("command", action.command())));
             meta.setLore(lore);
             meta.getPersistentDataContainer().set(
                     menuActionKey, PersistentDataType.STRING, action.command());
@@ -195,9 +197,12 @@ public final class PlayerMenuService implements Listener {
     public void close(Player player) {
         if (player == null) return;
         UUID uuid = player.getUniqueId();
-        generations.merge(uuid, 1L, Long::sum);
-        bedrockBridge.close(uuid);
         Inventory inventory = open.remove(uuid);
+        boolean active = inventory != null || generations.containsKey(uuid);
+        if (active) {
+            generations.merge(uuid, 1L, Long::sum);
+            bedrockBridge.close(uuid);
+        }
         if (inventory != null
                 && player.getOpenInventory().getTopInventory() == inventory) {
             player.closeInventory();

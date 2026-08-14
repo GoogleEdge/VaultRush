@@ -42,20 +42,26 @@ public final class PlayerListener implements Listener {
     public void onPickup(EntityPickupItemEvent event) {
         plugin.gemService().handlePickup(event);
         if (event.getEntity() instanceof Player player) {
-            checkDeposit(player, player.getLocation());
+            checkDepositIfCarrying(player, player.getLocation());
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onMove(PlayerMoveEvent event) {
         if (event.getTo() == null) return;
-        checkDeposit(event.getPlayer(), event.getTo());
+        org.bukkit.Location from = event.getFrom();
+        org.bukkit.Location to = event.getTo();
+        if (from.getWorld() != null && from.getWorld().equals(to.getWorld())
+                && from.getX() == to.getX()
+                && from.getY() == to.getY()
+                && from.getZ() == to.getZ()) return;
+        checkDepositIfCarrying(event.getPlayer(), to);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onTeleport(PlayerTeleportEvent event) {
         if (event.getTo() == null) return;
-        checkDeposit(event.getPlayer(), event.getTo());
+        checkDepositIfCarrying(event.getPlayer(), event.getTo());
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -73,7 +79,7 @@ public final class PlayerListener implements Listener {
                 event.setCancelled(true);
             }
         }
-        checkDeposit(event.getPlayer(), event.getPlayer().getLocation());
+        checkDepositIfCarrying(event.getPlayer(), event.getPlayer().getLocation());
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -114,6 +120,7 @@ public final class PlayerListener implements Listener {
         plugin.jobSelectionService().close(event.getPlayer());
         plugin.matchController().handleQuit(event.getPlayer().getUniqueId());
         plugin.worldProtectionService().forgetPlayer(event.getPlayer().getUniqueId());
+        plugin.arenaManager().forgetPlayer(event.getPlayer().getUniqueId());
         plugin.menuItemService().forgetPlayer(event.getPlayer().getUniqueId());
     }
 
@@ -124,12 +131,19 @@ public final class PlayerListener implements Listener {
         plugin.jobSelectionService().close(event.getPlayer());
         plugin.matchController().handleQuit(event.getPlayer().getUniqueId());
         plugin.worldProtectionService().forgetPlayer(event.getPlayer().getUniqueId());
+        plugin.arenaManager().forgetPlayer(event.getPlayer().getUniqueId());
         plugin.menuItemService().forgetPlayer(event.getPlayer().getUniqueId());
     }
 
-    private void checkDeposit(Player player, org.bukkit.Location candidate) {
-        if (plugin.vaultService().tryDeposit(player, candidate)) {
-            ArenaMatch match = plugin.matchController().matchFor(player.getUniqueId());
+    private void checkDepositIfCarrying(Player player,
+                                        org.bukkit.Location candidate) {
+        if (player == null || candidate == null) return;
+        ArenaMatch match = plugin.matchController().matchFor(player.getUniqueId());
+        if (match == null || match.state() != com.example.vaultrush.arena.GameState.RUNNING) return;
+        com.example.vaultrush.model.PlayerSession session =
+                match.sessions().get(player.getUniqueId());
+        if (session == null || session.carriedGems() <= 0) return;
+        if (plugin.vaultService().tryDeposit(player, candidate, match, session)) {
             plugin.matchController().checkWin(match);
         }
     }

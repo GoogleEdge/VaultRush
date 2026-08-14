@@ -15,6 +15,7 @@ public final class ArenaManager {
     private final VaultRushPlugin plugin;
     private final Map<String, ArenaDefinition> arenas = new LinkedHashMap<>();
     private final Map<String, ArenaMatch> matches = new LinkedHashMap<>();
+    private final Map<UUID, ArenaMatch> playerMatches = new HashMap<>();
 
     public ArenaManager(VaultRushPlugin plugin) {
         this.plugin = plugin;
@@ -22,6 +23,7 @@ public final class ArenaManager {
 
     public void load() {
         arenas.clear();
+        playerMatches.clear();
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("arenas");
         if (section == null) return;
         for (String rawId : section.getKeys(false)) {
@@ -89,14 +91,31 @@ public final class ArenaManager {
     }
 
     public ArenaMatch findByPlayer(java.util.UUID uuid) {
+        if (uuid == null) return null;
+        ArenaMatch cached = playerMatches.get(uuid);
+        if (cached != null) {
+            if (cached.queue().contains(uuid) || cached.sessions().containsKey(uuid)) {
+                return cached;
+            }
+            playerMatches.remove(uuid, cached);
+        }
         for (ArenaMatch match : matches.values()) {
-            if (match.queue().contains(uuid) || match.sessions().containsKey(uuid)) return match;
+            if (match.queue().contains(uuid) || match.sessions().containsKey(uuid)) {
+                playerMatches.put(uuid, match);
+                return match;
+            }
         }
         return null;
     }
 
+    public void forgetPlayer(UUID uuid) {
+        if (uuid != null) playerMatches.remove(uuid);
+    }
+
     public void removeMatch(ArenaMatch match) {
-        if (match != null) matches.remove(match.arena().id());
+        if (match == null) return;
+        matches.remove(match.arena().id());
+        playerMatches.entrySet().removeIf(entry -> entry.getValue() == match);
     }
 
     private void disableEnabledWorldConflicts() {

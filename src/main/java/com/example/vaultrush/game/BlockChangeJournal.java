@@ -24,6 +24,7 @@ public final class BlockChangeJournal<T> {
     }
 
     public boolean contains(BlockKey key) { return entries.containsKey(key); }
+    public T remove(BlockKey key) { return entries.remove(key); }
     public int size() { return entries.size(); }
     public boolean isEmpty() { return entries.isEmpty(); }
 

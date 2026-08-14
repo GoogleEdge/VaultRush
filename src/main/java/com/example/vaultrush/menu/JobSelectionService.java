@@ -69,13 +69,16 @@ public final class JobSelectionService implements Listener {
         if (bedrock) {
             final long bedrockGeneration = generation;
             List<String> buttons = java.util.Arrays.stream(JobType.values())
-                    .map(job -> job.displayName() + "\n"
+                    .map(job -> job.displayName(plugin) + "\n"
                             + plugin.jobService().description(job))
                     .toList();
             boolean sent;
             try {
-                sent = bedrockBridge.open(uuid, "选择职业",
-                        "选择职业后才会加入 " + arena.id() + " 的队列。",
+                sent = bedrockBridge.open(uuid,
+                        plugin.menuText("job-menu-title", "&6选择职业 · %arena%",
+                                Map.of("arena", arena.id())),
+                        plugin.menuText("job-menu-content", "选择职业后才会加入 %arena% 的队列。",
+                                Map.of("arena", arena.id())),
                         buttons, index -> plugin.getServer().getScheduler()
                                 .runTask(plugin, () -> selectBedrock(uuid,
                                         arena.id(), bedrockGeneration, index)));
@@ -104,7 +107,7 @@ public final class JobSelectionService implements Listener {
                         "arena", arena.id(),
                         "count", String.valueOf(match.queue().size()),
                         "max", String.valueOf(plugin.maxPlayers()),
-                        "job", job.displayName()));
+                        "job", job.displayName(plugin)));
                 plugin.matchController().maybeStart(match);
             }
             case ALREADY_QUEUED_OR_PLAYING ->
@@ -194,7 +197,8 @@ public final class JobSelectionService implements Listener {
         JobInventoryHolder holder = new JobInventoryHolder(
                 player.getUniqueId(), arena.id(), generation);
         Inventory inventory = Bukkit.createInventory(holder, 27,
-                ChatColor.GOLD + "选择职业 · " + arena.id());
+                plugin.menuText("job-menu-title", "&6选择职业 · %arena%",
+                        Map.of("arena", arena.id())));
         holder.setInventory(inventory);
         fill(inventory);
         open.put(player.getUniqueId(), inventory);
@@ -213,7 +217,7 @@ public final class JobSelectionService implements Listener {
             JobType job = JobType.values()[index];
             ItemStack icon = new ItemStack(job.icon());
             ItemMeta meta = icon.getItemMeta();
-            meta.setDisplayName(ChatColor.GOLD + job.displayName());
+            meta.setDisplayName(ChatColor.GOLD + job.displayName(plugin));
             meta.setLore(plugin.jobService().lore(job));
             meta.getPersistentDataContainer().set(jobKey,
                     PersistentDataType.STRING, job.id());

@@ -29,7 +29,14 @@ public final class VaultService {
         ArenaMatch match = arenaManager.findByPlayer(player.getUniqueId());
         if (match == null || match.state() != GameState.RUNNING) return false;
         PlayerSession session = match.sessions().get(player.getUniqueId());
-        if (session == null || session.carriedGems() <= 0) return false;
+        return tryDeposit(player, candidate, match, session);
+    }
+
+    public boolean tryDeposit(Player player, Location candidate,
+                              ArenaMatch match, PlayerSession session) {
+        if (player == null || candidate == null || match == null
+                || match.state() != GameState.RUNNING || session == null
+                || session.carriedGems() <= 0) return false;
         if (!isInDeposit(candidate, match, session)) return false;
 
         int amount = session.carriedGems();
@@ -39,7 +46,7 @@ public final class VaultService {
         plugin.broadcast(match, "gem-deposited", Map.of(
                 "player", player.getName(),
                 "amount", String.valueOf(amount),
-                "team", session.team().coloredName(),
+                "team", session.team().coloredName(plugin),
                 "score", String.valueOf(score)
         ));
         plugin.shopService().awardDeposit(player, amount);

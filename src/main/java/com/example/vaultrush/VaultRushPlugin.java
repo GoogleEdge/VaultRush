@@ -15,6 +15,7 @@ import com.example.vaultrush.game.WorldProtectionService;
 import com.example.vaultrush.listener.CombatRuleListener;
 import com.example.vaultrush.listener.PlayerListener;
 import com.example.vaultrush.listener.WorldProtectionListener;
+import com.example.vaultrush.i18n.LocaleService;
 import com.example.vaultrush.menu.BedrockBridgeLoader;
 import com.example.vaultrush.menu.BedrockMenuBridge;
 import com.example.vaultrush.menu.JobSelectionService;
@@ -46,8 +47,8 @@ public final class VaultRushPlugin extends JavaPlugin {
             Map.entry("world-protection-limit", "&c本局地图改动已达到安全上限，不能继续修改新方块。"),
             Map.entry("world-protection-start-failed", "&c地图保护无法启动，本场比赛未开始；你仍保留在队列中。"),
             Map.entry("world-protection-world-conflict", "&c竞技场 &f%arena% &c无法启用：世界 &f%world% &c已被另一个竞技场独占。"),
-            Map.entry("menu-item-inventory-full", "&e背包已满，无法放入“物品栏”菜单物品；请先空出一个普通背包格。"),
-            Map.entry("menu-item-invalid", "&c这个菜单物品无效，已移除。请使用新的“物品栏”物品。")
+            Map.entry("menu-item-inventory-full", "&e背包已满，无法放入“打开菜单”物品；请先空出一个普通背包格。"),
+            Map.entry("menu-item-invalid", "&c这个菜单物品无效，已移除。请使用新的“打开菜单”物品。")
     );
     private ArenaManager arenaManager;
     private QueueService queueService;
@@ -63,10 +64,12 @@ public final class VaultRushPlugin extends JavaPlugin {
     private JobService jobService;
     private JobSelectionService jobSelectionService;
     private WorldProtectionService worldProtectionService;
+    private LocaleService localeService;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        localeService = new LocaleService(this);
         arenaManager = new ArenaManager(this);
         arenaManager.load();
         worldProtectionService = new WorldProtectionService(this, arenaManager);
@@ -117,6 +120,8 @@ public final class VaultRushPlugin extends JavaPlugin {
         if (cleanupService != null) cleanupService.cleanupAll();
         reloadConfig();
         arenaManager.load();
+        if (worldProtectionService != null) worldProtectionService.invalidateWorldCache();
+        if (localeService != null) localeService.reload();
         gemService.clearPluginOwnedEntities();
         if (menuItemService != null) menuItemService.refreshOnlinePlayers();
     }
@@ -135,6 +140,7 @@ public final class VaultRushPlugin extends JavaPlugin {
     public JobService jobService() { return jobService; }
     public JobSelectionService jobSelectionService() { return jobSelectionService; }
     public WorldProtectionService worldProtectionService() { return worldProtectionService; }
+    public LocaleService localeService() { return localeService; }
 
     public int minPlayers() {
         int teamLimit = Math.max(1,
@@ -170,26 +176,27 @@ public final class VaultRushPlugin extends JavaPlugin {
         Material material = material("settings.menu.item.material", Material.NETHER_STAR);
         return material.isAir() ? Material.NETHER_STAR : material;
     }
-    public String gemName() { return getConfig().getString("settings.gem-name", "&aVault Gem"); }
+    public String gemName() {
+        String fallback = "&a宝石";
+        return localeService == null ? getConfig().getString(
+                "settings.gem-name", fallback)
+                : localeService.resolveSetting(
+                        "gem-name", "settings.gem-name", fallback);
+    }
     public Material kitSword() { return material("settings.kit.sword", Material.STONE_SWORD); }
     public Material kitBlockMaterial() { return material("settings.kit.block-material", Material.WHITE_WOOL); }
     public boolean autoOpenMenuOnJoin() { return getConfig().getBoolean("settings.menu.auto-open-on-join", true); }
 
     public String text(String key, Map<String, String> replacements) {
-        String fallback = MESSAGE_FALLBACKS.getOrDefault(key, key);
-        String raw = getConfig().getString("messages." + key, fallback);
-        if (raw == null || raw.equals(key)) raw = fallback;
-        for (Map.Entry<String, String> entry : replacements.entrySet()) {
-            raw = raw.replace("%" + entry.getKey() + "%", entry.getValue());
-        }
+        String fallback = MESSAGE_FALLBACKS.getOrDefault(key, "");
+        String raw = localeService == null ? fallback
+                : localeService.resolve(key, fallback, replacements);
         return ChatColor.translateAlternateColorCodes('&', raw);
     }
 
     public String menuText(String key, String fallback, Map<String, String> replacements) {
-        String raw = com.example.vaultrush.menu.MenuTextResolver.resolve(getConfig(), key, fallback);
-        for (Map.Entry<String, String> entry : replacements.entrySet()) {
-            raw = raw.replace("%" + entry.getKey() + "%", entry.getValue());
-        }
+        String raw = localeService == null ? fallback
+                : localeService.resolve(key, fallback, replacements);
         return ChatColor.translateAlternateColorCodes('&', raw);
     }
 
@@ -218,8 +225,13 @@ public final class VaultRushPlugin extends JavaPlugin {
     }
 
     private String prefix() {
-        String value = getConfig().getString("messages.prefix", "");
-        return ChatColor.translateAlternateColorCodes('&', value == null ? "" : value);
+        String fallback = "&6[宝库争夺]&r ";
+        String value = localeService == null ? getConfig().getString(
+                "messages.prefix", fallback)
+                : localeService.resolveSetting(
+                        "prefix", "messages.prefix", fallback);
+        return ChatColor.translateAlternateColorCodes('&',
+                value == null ? "" : value);
     }
 
     private Material material(String path, Material fallback) {

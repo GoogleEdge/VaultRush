@@ -42,6 +42,8 @@ public final class WorldProtectionService {
     private final ArenaManager arenaManager;
     private final Map<ArenaMatch, BlockChangeJournal<BlockSnapshot>> journals =
             new HashMap<>();
+    private final Map<UUID, ArenaDefinition> protectedArenas = new HashMap<>();
+    private final Set<UUID> unprotectedWorlds = new HashSet<>();
     private final Map<UUID, Long> messageCooldowns = new HashMap<>();
     private final Set<UUID> restoringWorlds = new HashSet<>();
 
@@ -57,7 +59,18 @@ public final class WorldProtectionService {
 
     public ArenaDefinition protectedArena(World world) {
         if (!enabled() || world == null) return null;
-        return arenaManager.enabledArenaForWorld(world);
+        UUID worldId = world.getUID();
+        if (protectedArenas.containsKey(worldId)) return protectedArenas.get(worldId);
+        if (unprotectedWorlds.contains(worldId)) return null;
+        ArenaDefinition arena = arenaManager.enabledArenaForWorld(world);
+        if (arena != null) protectedArenas.put(worldId, arena);
+        else unprotectedWorlds.add(worldId);
+        return arena;
+    }
+
+    public void invalidateWorldCache() {
+        protectedArenas.clear();
+        unprotectedWorlds.clear();
     }
 
     public ArenaMatch matchForWorld(World world) {

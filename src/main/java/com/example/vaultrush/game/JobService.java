@@ -58,7 +58,7 @@ public final class JobService {
         long remaining = session.jobCooldownRemaining(now);
         if (remaining > 0) {
             plugin.send(player, "job-cooldown", Map.of(
-                    "job", session.job().displayName(),
+                    "job", session.job().displayName(plugin),
                     "seconds", String.valueOf((remaining + 999L) / 1000L)));
             return true;
         }
@@ -68,8 +68,8 @@ public final class JobService {
                 defaultCooldown(session.job()), 0);
         session.startJobCooldown(now + cooldown * 1000L);
         plugin.send(player, "job-activated", Map.of(
-                "job", session.job().displayName(),
-                "ability", session.job().abilityName()));
+                "job", session.job().displayName(plugin),
+                "ability", session.job().abilityName(plugin)));
         return true;
     }
 
@@ -108,20 +108,23 @@ public final class JobService {
     }
 
     public String description(JobType job) {
-        return switch (job) {
+        return plugin.menuText("job-description-" + job.id(), switch (job) {
             case ASSAULT -> "对敌伤害提高 10%；主动冲锋";
             case SCOUT -> "拾取宝石获得短暂加速；主动标记附近敌人";
             case GUARDIAN -> "受到敌人伤害降低 15%；主动获得抗性提升";
             case ENGINEER -> "额外获得建筑方块；主动获得急迫 II";
             case ILLUSIONIST -> "拾取宝石短暂隐身；主动进入幻影状态";
-        };
+        }, Map.of());
     }
 
     public List<String> lore(JobType job) {
         return List.of(
                 ChatColor.GRAY + description(job),
-                ChatColor.YELLOW + "主动技能：" + job.abilityName(),
-                ChatColor.DARK_GRAY + "选择后加入比赛队列");
+                ChatColor.YELLOW + plugin.menuText(
+                        "job-ability-label", "主动技能：%ability%",
+                        Map.of("ability", job.abilityName(plugin))),
+                ChatColor.DARK_GRAY + plugin.menuText(
+                        "job-queue-hint", "选择后加入比赛队列", Map.of()));
     }
 
     private boolean applyActive(Player player, ArenaMatch match, PlayerSession session) {
@@ -184,11 +187,13 @@ public final class JobService {
     private void giveAbilityItem(Player player, ArenaMatch match, PlayerSession session) {
         ItemStack stack = new ItemStack(session.job().icon());
         ItemMeta meta = stack.getItemMeta();
-        meta.setDisplayName(ChatColor.GOLD + session.job().abilityName()
-                + ChatColor.GRAY + "（职业技能）");
+        meta.setDisplayName(ChatColor.GOLD + session.job().abilityName(plugin)
+                + ChatColor.GRAY + plugin.menuText(
+                        "job-ability-item-suffix", "（职业技能）", Map.of()));
         meta.setLore(List.of(
                 ChatColor.GRAY + description(session.job()),
-                ChatColor.YELLOW + "手持右键使用；不会被消耗"));
+                ChatColor.YELLOW + plugin.menuText(
+                        "job-ability-use", "手持右键使用；不会被消耗", Map.of())));
         meta.getPersistentDataContainer().set(jobKey,
                 PersistentDataType.STRING, session.job().id());
         meta.getPersistentDataContainer().set(matchKey,

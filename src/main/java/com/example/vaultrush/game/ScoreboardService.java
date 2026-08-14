@@ -20,6 +20,7 @@ import java.util.UUID;
 public final class ScoreboardService {
     private final VaultRushPlugin plugin;
     private final Map<UUID, Scoreboard> boards = new HashMap<>();
+    private final Map<UUID, Map<Integer, String>> lines = new HashMap<>();
 
     public ScoreboardService(VaultRushPlugin plugin) {
         this.plugin = plugin;
@@ -34,26 +35,47 @@ public final class ScoreboardService {
         for (Map.Entry<UUID, PlayerSession> entry : match.sessions().entrySet()) {
             Player player = Bukkit.getPlayer(entry.getKey());
             if (player == null || !player.isOnline()) continue;
-            Scoreboard board = boards.computeIfAbsent(entry.getKey(), ignored -> Bukkit.getScoreboardManager().getNewScoreboard());
+            UUID uuid = entry.getKey();
+            Scoreboard board = boards.computeIfAbsent(uuid,
+                    ignored -> Bukkit.getScoreboardManager().getNewScoreboard());
             Objective objective = board.getObjective("vaultrush");
             if (objective == null) {
-                objective = board.registerNewObjective("vaultrush", "dummy", ChatColor.GOLD + "宝库争夺");
+                objective = board.registerNewObjective("vaultrush", "dummy",
+                        plugin.menuText("scoreboard-title", "&6宝库争夺", Map.of()));
                 objective.setDisplaySlot(DisplaySlot.SIDEBAR);
             }
-            Set<String> oldEntries = new HashSet<>(board.getEntries());
-            for (String oldEntry : oldEntries) board.resetScores(oldEntry);
 
             PlayerSession session = entry.getValue();
-            addLine(objective, ChatColor.GRAY + "────────────", 9);
-            addLine(objective, ChatColor.RED + "红队：" + ChatColor.WHITE + match.scores().get(Team.RED), 8);
-            addLine(objective, ChatColor.BLUE + "蓝队：" + ChatColor.WHITE + match.scores().get(Team.BLUE), 7);
-            addLine(objective, ChatColor.LIGHT_PURPLE + "职业：" + ChatColor.WHITE + session.job().displayName(), 6);
-            addLine(objective, ChatColor.YELLOW + "携带：" + ChatColor.WHITE + session.carriedGems(), 5);
-            addLine(objective, ChatColor.GOLD + "战术币：" + ChatColor.WHITE + session.tacticalCurrency(), 4);
-            addLine(objective, ChatColor.GREEN + "目标：" + ChatColor.WHITE + plugin.scoreToWin(), 3);
-            addLine(objective, ChatColor.AQUA + "时间：" + ChatColor.WHITE + formatTime(match.remainingSeconds()), 2);
-            addLine(objective, ChatColor.DARK_GRAY + "────────────", 1);
-            player.setScoreboard(board);
+            Map<Integer, String> next = new HashMap<>();
+            next.put(9, plugin.menuText("scoreboard-divider", "&7────────────", Map.of()));
+            next.put(8, plugin.menuText("scoreboard-red", "&c红队：&f%score%",
+                    Map.of("score", String.valueOf(match.scores().get(Team.RED)))));
+            next.put(7, plugin.menuText("scoreboard-blue", "&9蓝队：&f%score%",
+                    Map.of("score", String.valueOf(match.scores().get(Team.BLUE)))));
+            next.put(6, plugin.menuText("scoreboard-job", "&d职业：&f%job%",
+                    Map.of("job", session.job().displayName(plugin))));
+            next.put(5, plugin.menuText("scoreboard-carried", "&e携带：&f%amount%",
+                    Map.of("amount", String.valueOf(session.carriedGems()))));
+            next.put(4, plugin.menuText("scoreboard-currency", "&6战术币：&f%amount%",
+                    Map.of("amount", String.valueOf(session.tacticalCurrency()))));
+            next.put(3, plugin.menuText("scoreboard-target", "&a目标：&f%score%",
+                    Map.of("score", String.valueOf(plugin.scoreToWin()))));
+            next.put(2, plugin.menuText("scoreboard-time", "&b时间：&f%time%",
+                    Map.of("time", formatTime(match.remainingSeconds()))));
+            next.put(1, ChatColor.DARK_GRAY + plugin.menuText(
+                    "scoreboard-divider", "&7────────────", Map.of()));
+
+            Map<Integer, String> previous = lines.computeIfAbsent(uuid,
+                    ignored -> new HashMap<>());
+            for (Map.Entry<Integer, String> line : next.entrySet()) {
+                String old = previous.get(line.getKey());
+                if (line.getValue().equals(old)) continue;
+                if (old != null) board.resetScores(old);
+                objective.getScore(line.getValue()).setScore(line.getKey());
+            }
+            previous.clear();
+            previous.putAll(next);
+            if (player.getScoreboard() != board) player.setScoreboard(board);
         }
     }
 
@@ -61,6 +83,7 @@ public final class ScoreboardService {
         if (match == null) return;
         for (UUID uuid : new HashSet<>(match.sessions().keySet())) {
             Scoreboard board = boards.remove(uuid);
+            lines.remove(uuid);
             Player player = Bukkit.getPlayer(uuid);
             if (player != null && player.isOnline() && board != null && player.getScoreboard() == board) {
                 player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -74,6 +97,7 @@ public final class ScoreboardService {
     public void clearPlayer(UUID uuid) {
         if (uuid == null) return;
         Scoreboard board = boards.remove(uuid);
+        lines.remove(uuid);
         Player player = Bukkit.getPlayer(uuid);
         if (player != null && player.isOnline() && board != null && player.getScoreboard() == board) {
             player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());

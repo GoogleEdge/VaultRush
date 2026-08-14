@@ -83,7 +83,7 @@ public final class ShopService {
             return PurchaseResult.INVENTORY_FULL;
         }
         session.recordPurchase(item, now + cooldownSeconds(item) * 1000L);
-        plugin.send(player, "shop-purchased", Map.of("item", item.displayName(), "balance", String.valueOf(session.tacticalCurrency())));
+        plugin.send(player, "shop-purchased", Map.of("item", item.displayName(plugin), "balance", String.valueOf(session.tacticalCurrency())));
         plugin.scoreboardService().update(match);
         return PurchaseResult.SUCCESS;
     }
@@ -103,7 +103,7 @@ public final class ShopService {
         PlayerSession session = session(player);
         long remaining = session == null || item == null ? 0L : session.cooldownRemaining(item, System.currentTimeMillis());
         plugin.send(player, key, Map.of(
-                "item", item == null ? "" : item.displayName(),
+                "item", item == null ? "" : item.displayName(plugin),
                 "balance", String.valueOf(session == null ? 0 : session.tacticalCurrency()),
                 "seconds", String.valueOf((remaining + 999L) / 1000L)
         ));
@@ -143,7 +143,7 @@ public final class ShopService {
             case DAMAGE_BOOST -> session.activateDamageBoost(now + durationSeconds(item) * 1000L);
             case SMOKE -> smoke(player, match);
         }
-        plugin.send(player, "shop-activated", Map.of("item", item.displayName()));
+        plugin.send(player, "shop-activated", Map.of("item", item.displayName(plugin)));
         return true;
     }
 
@@ -164,28 +164,44 @@ public final class ShopService {
     }
 
     public String status(PlayerSession session, ShopItem item) {
-        if (session == null) return "不可用";
+        if (session == null) return plugin.menuText(
+                "shop-status-unavailable", "不可用", Map.of());
         long cooldown = session.cooldownRemaining(item, System.currentTimeMillis());
         int maximum = limit(item);
-        String count = maximum <= 0 ? "不限" : session.purchases(item) + "/" + maximum;
-        return cooldown > 0 ? "冷却 " + ((cooldown + 999L) / 1000L) + "秒；次数 " + count : "可购买；次数 " + count;
+        String count = maximum <= 0
+                ? plugin.menuText("shop-status-unlimited", "不限", Map.of())
+                : session.purchases(item) + "/" + maximum;
+        if (cooldown > 0) {
+            return plugin.menuText("shop-status-cooldown",
+                    "冷却 %seconds%秒；次数 %count%", Map.of(
+                            "seconds", String.valueOf((cooldown + 999L) / 1000L),
+                            "count", count));
+        }
+        return plugin.menuText("shop-status-available", "可购买；次数 %count%",
+                Map.of("count", count));
     }
 
     public List<String> lore(PlayerSession session, ShopItem item) {
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + description(item));
-        lore.add(ChatColor.GOLD + "价格：" + cost(item) + " 战术币");
-        lore.add(ChatColor.YELLOW + "余额：" + (session == null ? 0 : session.tacticalCurrency()));
+        lore.add(ChatColor.GOLD + plugin.menuText("shop-price", "价格：%cost% 战术币",
+                Map.of("cost", String.valueOf(cost(item)))));
+        lore.add(ChatColor.YELLOW + plugin.menuText("shop-balance", "余额：%balance%",
+                Map.of("balance", String.valueOf(session == null ? 0 : session.tacticalCurrency()))));
         lore.add(ChatColor.AQUA + status(session, item));
-        lore.add(ChatColor.DARK_GRAY + "购买后右键使用");
+        lore.add(ChatColor.DARK_GRAY + plugin.menuText(
+                "shop-buy-use", "购买后右键使用", Map.of()));
         return lore;
     }
 
     private boolean giveItem(Player player, ShopItem item, ArenaMatch match) {
         ItemStack stack = new ItemStack(item.icon());
         ItemMeta meta = stack.getItemMeta();
-        meta.setDisplayName(ChatColor.GOLD + item.displayName());
-        meta.setLore(List.of(ChatColor.GRAY + description(item), ChatColor.YELLOW + "右键使用"));
+        meta.setDisplayName(ChatColor.GOLD + item.displayName(plugin));
+        meta.setLore(List.of(
+                ChatColor.GRAY + description(item),
+                ChatColor.YELLOW + plugin.menuText(
+                        "shop-ability-use", "右键使用", Map.of())));
         meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, item.id());
         meta.getPersistentDataContainer().set(matchKey, PersistentDataType.STRING, match.matchId());
         stack.setItemMeta(meta);
@@ -260,7 +276,8 @@ public final class ShopService {
     }
 
     public String description(ShopItem item) {
-        return switch (item) {
+        if (item == null) return "";
+        String fallback = switch (item) {
             case SPEED -> "短时间获得速度 II";
             case JUMP -> "短时间获得跳跃提升 II";
             case FIREBALL -> "水平前冲并向上约 8 格，不爆炸、不点火、不伤人";
@@ -268,5 +285,6 @@ public final class ShopService {
             case DAMAGE_BOOST -> "短时间增加对敌伤害";
             case SMOKE -> "使 8 格内敌人获得 Blindness II，默认约 8 秒";
         };
+        return plugin.menuText("shop-description-" + item.id(), fallback, Map.of());
     }
 }

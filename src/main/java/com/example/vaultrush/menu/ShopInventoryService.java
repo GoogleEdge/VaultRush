@@ -62,6 +62,9 @@ public final class ShopInventoryService implements Listener {
     }
 
     public void openJava(Player player) {
+        if (player == null) return;
+        bedrockGenerations.merge(player.getUniqueId(), 1L, Long::sum);
+        bedrockBridge.close(player.getUniqueId());
         ArenaMatch match = shopService.runningMatch(player);
         if (match == null || !shopService.canOpen(player)) return;
         Inventory previous = open.remove(player.getUniqueId());
@@ -70,7 +73,8 @@ public final class ShopInventoryService implements Listener {
             player.closeInventory();
         }
         ShopInventoryHolder holder = new ShopInventoryHolder(player.getUniqueId(), match.matchId());
-        Inventory inventory = Bukkit.createInventory(holder, 27, ChatColor.DARK_GREEN + "宝库争夺战术商店");
+        Inventory inventory = Bukkit.createInventory(holder, 27,
+                plugin.menuText("shop-menu-title", "&2宝库争夺战术商店", Map.of()));
         holder.setInventory(inventory);
         fill(inventory, player);
         open.put(player.getUniqueId(), inventory);
@@ -79,12 +83,20 @@ public final class ShopInventoryService implements Listener {
 
     public void openChat(Player player) {
         PlayerSession session = shopService.session(player);
-        player.sendMessage(ChatColor.GOLD + "=== 战术商店（余额 " + (session == null ? 0 : session.tacticalCurrency()) + "）===");
+        player.sendMessage(ChatColor.GOLD + plugin.menuText("shop-menu-header",
+                "=== 战术商店（余额 %balance%）===",
+                Map.of("balance", String.valueOf(session == null ? 0 : session.tacticalCurrency()))));
         for (ShopItem item : ShopItem.values()) {
-            player.sendMessage(ChatColor.YELLOW + item.id() + ChatColor.WHITE + " - " + item.displayName()
-                    + ChatColor.GRAY + " | " + shopService.description(item)
-                    + " | " + shopService.cost(item) + " 币 | " + shopService.status(session, item)
-                    + ChatColor.DARK_GRAY + "  /vr shop buy " + item.id());
+            player.sendMessage(ChatColor.YELLOW + plugin.menuText(
+                    "shop-chat-entry",
+                    "%id% - %item% | %description% | %cost% 战术币 | %status%  /vr shop buy %command%",
+                    Map.of(
+                            "id", item.id(),
+                            "item", item.displayName(plugin),
+                            "description", shopService.description(item),
+                            "cost", String.valueOf(shopService.cost(item)),
+                            "status", shopService.status(session, item),
+                            "command", item.id())));
         }
     }
 
@@ -93,16 +105,26 @@ public final class ShopInventoryService implements Listener {
         PlayerSession session = shopService.session(player);
         if (match == null || session == null) return;
         List<String> buttons = java.util.Arrays.stream(ShopItem.values())
-                .map(item -> item.displayName() + "\n" + shopService.description(item)
-                        + "\n" + shopService.cost(item) + " 币 · " + shopService.status(session, item))
+                .map(item -> plugin.menuText(
+                        "shop-bedrock-entry",
+                        "%item%\\n价格：%cost% 战术币 · %status%",
+                        Map.of(
+                                "item", item.displayName(plugin),
+                                "cost", String.valueOf(shopService.cost(item)),
+                                "status", shopService.status(session, item)))
+                        + "\\n" + shopService.description(item))
                 .toList();
         UUID uuid = player.getUniqueId();
         String matchId = match.matchId();
         long generation = bedrockGenerations.merge(uuid, 1L, Long::sum);
         boolean sent;
         try {
-            sent = bedrockBridge.open(uuid, "宝库争夺战术商店",
-                    "余额：" + session.tacticalCurrency() + " 战术币\n购买后道具进入背包，右键使用。", buttons,
+            sent = bedrockBridge.open(uuid,
+                    plugin.menuText("shop-menu-title", "&2宝库争夺战术商店", Map.of()),
+                    plugin.menuText("shop-menu-content",
+                            "余额：%balance% 战术币\n购买后道具进入背包，右键使用。",
+                            Map.of("balance", String.valueOf(session.tacticalCurrency()))),
+                    buttons,
                     index -> plugin.getServer().getScheduler().runTask(plugin, () -> {
                         if (bedrockGenerations.getOrDefault(uuid, 0L) != generation) return;
                         bedrockGenerations.remove(uuid, generation);
@@ -142,7 +164,7 @@ public final class ShopInventoryService implements Listener {
             ShopItem item = ShopItem.values()[index];
             ItemStack icon = new ItemStack(item.icon());
             ItemMeta meta = icon.getItemMeta();
-            meta.setDisplayName(ChatColor.GOLD + item.displayName());
+            meta.setDisplayName(ChatColor.GOLD + item.displayName(plugin));
             meta.setLore(shopService.lore(session, item));
             icon.setItemMeta(meta);
             inventory.setItem(SLOTS[index], icon);

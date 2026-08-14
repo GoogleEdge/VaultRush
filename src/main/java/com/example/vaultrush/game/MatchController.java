@@ -110,7 +110,6 @@ public final class MatchController {
                 if (player == null || !player.isOnline()) continue;
                 plugin.menuService().close(player);
                 plugin.jobSelectionService().close(player);
-                plugin.menuItemService().ensure(player);
                 PlayerSession session = new PlayerSession(uuid, team,
                         PlayerSnapshot.capture(player),
                         queuedJobs.getOrDefault(uuid, JobType.ASSAULT));
@@ -340,7 +339,7 @@ public final class MatchController {
             ));
         } else {
             plugin.broadcast(match, "winner", Map.of(
-                    "team", winner.coloredName(),
+                    "team", winner.coloredName(plugin),
                     "score", String.valueOf(match.scores().get(winner))
             ));
         }
